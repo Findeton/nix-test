@@ -1,0 +1,22 @@
+[package]
+name = "rust-wasm"
+version = "0.0.1"
+edition = "2021"
+authors = [
+  "Felix Robles <felix@sequentech.io>"
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# wasm
+wasm-bindgen = {version = "0.2", features = ['serde-serialize'], optional = true}
+web-sys = { version = "0.3.4", features = ['Performance'], optional = true}
+
+
+[features]
+wasm = ["wasm-bindgen", "dep:web-sys"]
+default = ["wasm"]
