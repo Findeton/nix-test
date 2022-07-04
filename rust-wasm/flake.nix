@@ -12,10 +12,10 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { 
           inherit system overlays;
-          crossSystem = {
-            config = "wasm32-unknown-unknown";
-            useLLVM = true;
-          };
+          #crossSystem = {
+          #  config = "wasm32-unknown-unknown";
+          #  useLLVM = true;
+          #};
         };
         rust-nightly = pkgs
           .rust-bin
@@ -47,6 +47,15 @@
           cargoLock = {
             lockFile = ./Cargo.lock;
           };
+        };
+
+        # configure the dev shell
+        devShell = (
+          pkgs.mkShell.override { stdenv = pkgs.clangStdenv; }
+        ) { 
+          buildInputs = 
+            defaultPackage.nativeBuildInputs ++
+            [ pkgs.bash ]; 
         };
       }
     );
