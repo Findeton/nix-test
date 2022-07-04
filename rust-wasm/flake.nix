@@ -2,7 +2,7 @@
   description = "Minimal rust wasm32-unknown-unknown example";
 
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/69ca5c9898b26c2063d0e8a4db013e4ba0548159";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   
 # x86_64-pc-linux-gnu
@@ -17,14 +17,17 @@
           #  useLLVM = true;
           #};
         };
+        stdenv = pkgs.clangStdenv;
         rust-nightly = pkgs
           .rust-bin
-          .selectLatestNightlyWith(
-            toolchain: toolchain.default.override {
+          .nightly
+          ."2022-04-07"
+          .default
+          .override {
               extensions = [ "rust-src" ];
               targets = [ "wasm32-unknown-unknown" ];
-            }
-        );
+          }
+        ;
       in rec {
         defaultPackage = pkgs.rustPlatform.buildRustPackage {
           pname = "rust-wasm";
@@ -32,17 +35,20 @@
           src = ./.;
           nativeBuildInputs = [
             rust-nightly
+            #pkgs.nodePackages.npm
+            pkgs.yarn
             pkgs.wasm-pack
             pkgs.wasm-bindgen-cli
           ];
           buildPhase = ''
             echo 'Build: flags'
-            export RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals'
             echo 'Build: wasm-pack build'
-            wasm-pack build --out-name index --release --target web --features=wasm -- -Z build-std=panic_abort,std
+            wasm-pack build --mode no-install --out-name index --release --target web --features=wasm
             echo 'Build: wasm-pack pack'
-            wasm-pack pack .
+            ls -lah pkg
+            
           '';
+          installPhase = "wasm-pack -v pack .";
 
           cargoLock = {
             lockFile = ./Cargo.lock;
