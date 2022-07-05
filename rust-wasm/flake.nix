@@ -5,7 +5,6 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   
-# x86_64-pc-linux-gnu
   outputs = { self, nixpkgs, flake-utils, rust-overlay }:
     flake-utils.lib.eachDefaultSystem (system:
       let 
@@ -36,14 +35,12 @@
             pkgs.wasm-bindgen-cli
           ];
           buildPhase = ''
-            echo 'Build: flags'
             echo 'Build: wasm-pack build'
             wasm-pack build --mode no-install --out-name index --release --target web --features=wasm
             echo 'Build: wasm-pack pack'
-            ls -lah pkg
-            
+            wasm-pack -v pack .
           '';
-          installPhase = "wasm-pack -v pack .";
+          installPhase = "echo 'skipping install phase'";
 
           cargoLock = {
             lockFile = ./Cargo.lock;
