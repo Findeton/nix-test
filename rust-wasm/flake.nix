@@ -35,18 +35,18 @@
             pkgs.wasm-bindgen-cli
           ];
           buildPhase = ''
-            ls -lah
             echo 'Build: wasm-pack build'
             wasm-pack build --mode no-install --out-name index --release --target web --features=wasm
           '';
           installPhase = "
-            ls -lah
-            ls -lah pkg
-            export HOME=$out/home
+            # set HOME temporarily to fix npm pack
+            mkdir -p $out/temp_home
+            export HOME=$out/temp_home
+            echo 'Install: wasm-pack pack'
             wasm-pack -v pack .
-            rm -Rf $out/home
+            rm -Rf $out/temp_home
             cp pkg/rust-wasm-*.tgz $out
-            ";
+            "; 
 
           cargoLock = {
             lockFile = ./Cargo.lock;
