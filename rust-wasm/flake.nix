@@ -35,12 +35,18 @@
             pkgs.wasm-bindgen-cli
           ];
           buildPhase = ''
+            ls -lah
             echo 'Build: wasm-pack build'
             wasm-pack build --mode no-install --out-name index --release --target web --features=wasm
-            echo 'Build: wasm-pack pack'
-            wasm-pack -v pack .
           '';
-          installPhase = "echo 'skipping install phase'";
+          installPhase = "
+            ls -lah
+            ls -lah pkg
+            export HOME=$out/home
+            wasm-pack -v pack .
+            rm -Rf $out/home
+            cp pkg/rust-wasm-*.tgz $out
+            ";
 
           cargoLock = {
             lockFile = ./Cargo.lock;
