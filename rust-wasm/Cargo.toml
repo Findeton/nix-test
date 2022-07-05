@@ -14,8 +14,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # wasm
 cfg-if = { version = "0.1.8"}
-compiler_builtins = { version = "0.1.69" }
-wasm-bindgen = {version = "0.2.81", features = ['serde-serialize'], optional = true}
+#compiler_builtins = { version = "0.1.69" }
+wasm-bindgen = {version = "=0.2.78", features = ['serde-serialize'], optional = true}
 web-sys = { version = "0.3", features = ['Performance'], optional = true}
 
 [features]

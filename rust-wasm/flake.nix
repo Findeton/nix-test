@@ -2,7 +2,7 @@
   description = "Minimal rust wasm32-unknown-unknown example";
 
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/69ca5c9898b26c2063d0e8a4db013e4ba0548159";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   
 # x86_64-pc-linux-gnu
@@ -12,10 +12,6 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { 
           inherit system overlays;
-          #crossSystem = {
-          #  config = "wasm32-unknown-unknown";
-          #  useLLVM = true;
-          #};
         };
         stdenv = pkgs.clangStdenv;
         rust-nightly = pkgs
@@ -35,8 +31,7 @@
           src = ./.;
           nativeBuildInputs = [
             rust-nightly
-            #pkgs.nodePackages.npm
-            pkgs.yarn
+            pkgs.nodePackages.npm
             pkgs.wasm-pack
             pkgs.wasm-bindgen-cli
           ];
