@@ -1,98 +1,64 @@
 # This file is pretty general, and you can adapt it in your project replacing
 # only `name` and `description` below.
 
+
 {
-  description = "Test Nix Rust projec";
+  description = "Test rust code";
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    crate2nix = {
-      url = "github:kolloch/crate2nix";
-      flake = false;
-    };
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
-  };
+  # input
+  inputs.rust-overlay.url = "github:oxalica/rust-overlay";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs, utils, rust-overlay, crate2nix, ... }:
-    let
-      # If you change the name here, you must also do it in Cargo.toml
-      name = "nix-test";
-      # Rust release channel to use.
-      # https://rust-lang.github.io/rustup/concepts/channels.html
-      rustChannel = "stable";
-    in
-    utils.lib.eachDefaultSystem
-      (system:
+  # output function of this flake
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
         let
-          # Imports
+          overlays = [ (import rust-overlay) ];
+          # pkgs is just the nix packages
           pkgs = import nixpkgs {
-            inherit system;
-            overlays = [
-              rust-overlay.overlays.default
-              (self: super: {
-                # Because rust-overlay bundles multiple rust packages into one
-                # derivation, specify that mega-bundle here, so that crate2nix
-                # will use them automatically.
-                rustc = self.rust-bin.${rustChannel}.latest.default;
-                cargo = self.rust-bin.${rustChannel}.latest.default;
-              })
+            inherit system overlays;
+          };
+          
+          rust-system = pkgs.rust-bin.stable.latest.default;
+          # see https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/rust.section.md#importing-a-cargolock-file-importing-a-cargolock-file
+          cargoPatches = {
+              cargoLock = let
+                  fixupLockFile = path: (builtins.readFile path);
+              in {
+                lockFileContents = fixupLockFile ./Cargo.lock.copy;
+                  outputHashes = {};
+              };
+              postPatch = ''
+                  cp ${./Cargo.lock.copy} Cargo.lock
+              '';
+          };
+          buildRustPackageWithCargo = cargoArgs: pkgs.rustPlatform.buildRustPackage (cargoPatches // cargoArgs);
+
+        # resulting packages of the flake
+        in rec {
+          packages.nix-test-rust = buildRustPackageWithCargo {
+            pname = "nix-test-rust";
+            version = "0.0.1";
+            src = ./.;
+            buildInputs = [
+              pkgs.openssl
+              pkgs.pkgconfig
+              rust-system
             ];
           };
+          # braid is the default package
+          defaultPackage = packages.nix-test-rust;
 
-          # cf. https://github.com/kolloch/crate2nix/issues/110
-          inherit (import "${crate2nix}/tools.nix" { inherit pkgs; })
-            generatedCargoNix;
-
-          # Create the cargo2nix project
-          project = pkgs.callPackage
-            (generatedCargoNix {
-              inherit name;
-              src = ./.;
-            })
-            {
-              inherit pkgs;
-              buildRustCrate = null; # https://github.com/kolloch/crate2nix/pull/178#issuecomment-820692187
-
-              # Individual crate overrides go here
-              # Example: https://github.com/balsoft/simple-osd-daemons/blob/6f85144934c0c1382c7a4d3a2bbb80106776e270/flake.nix#L28-L50
-              defaultCrateOverrides = pkgs.defaultCrateOverrides // {
-                # The himalaya crate itself is overriden here. Typically we
-                # configure non-Rust dependencies (see below) here.
-                ${name} = oldAttrs: {
-                  inherit buildInputs nativeBuildInputs;
-                };
-              };
-            };
-
-          # Configuration for the non-Rust dependencies
-          buildInputs = with pkgs; [  ];
-          nativeBuildInputs = with pkgs; [ rustc cargo pkgconfig ];
-        in
-        rec {
-          packages.${name} = project.rootCrate.build;
-
-          # `nix build`
-          defaultPackage = packages.${name};
-
-          # `nix develop`
-          devShell = pkgs.mkShell
-            {
-              inputsFrom = builtins.attrValues self.packages.${system};
-              buildInputs = buildInputs ++ (with pkgs;
-                # Tools you need for development go here.
-                [
-                  nixpkgs-fmt
-                  cargo-watch
-                  pkgs.rust-bin.${rustChannel}.latest.rust-analysis
-                  pkgs.rust-bin.${rustChannel}.latest.rls
-                ]);
-              RUST_SRC_PATH = "${pkgs.rust-bin.${rustChannel}.latest.rust-src}/lib/rustlib/src/rust/library";
-            };
+          # configure the dev shell
+          devShell = (
+            pkgs.mkShell.override { stdenv = pkgs.clangStdenv; }
+          ) { 
+            buildInputs = 
+              packages.braid.buildInputs ++
+              [ pkgs.bash ]; 
+          };
         }
-      );
+    );
 }
