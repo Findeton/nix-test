@@ -43,7 +43,8 @@
             version = "0.0.1";
             src = ./.;
             buildInputs = [
-              rust-system
+              pkgs.openssl
+              rust-system 
             ];
           };
           # braid is the default package
