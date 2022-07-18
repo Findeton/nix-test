@@ -39,12 +39,10 @@
         # resulting packages of the flake
         in rec {
           packages.nix-test-rust = buildRustPackageWithCargo {
-            pname = "nix-test-rust";
+            pname = "nix-test-rust"; 
             version = "0.0.1";
             src = ./.;
             buildInputs = [
-              pkgs.openssl
-              pkgs.pkgconfig
               rust-system
             ];
           };
