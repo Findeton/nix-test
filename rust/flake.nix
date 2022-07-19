@@ -47,6 +47,9 @@
               pkgs.openssl
               rust-system 
             ];
+            nativeBuildInputs = [
+              pkgs.m4
+            ];
           };
           # braid is the default package
           defaultPackage = packages.nix-test-rust;
