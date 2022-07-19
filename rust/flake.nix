@@ -43,7 +43,7 @@
             version = "0.0.1";
             src = ./.;
             buildInputs = [
-              #pkgs.darwin.apple_sdk.frameworks.Security
+              pkgs.darwin.apple_sdk.frameworks.Security
               pkgs.openssl
               rust-system 
             ];
